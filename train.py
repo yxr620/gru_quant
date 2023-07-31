@@ -1,115 +1,100 @@
 import torch
 import torch.nn as nn
-import pandas as pd
 import argparse
-import torch.nn.functional as F
+import os
 
-from utils import MyDataset, get_file_list
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader
+from utils import double_dataset, loss_fn
 
+# 模型定义
+class ReturnModel(nn.Module):
+    def __init__(self, input_size1, input_size2, hidden_size, output_size):
+        super().__init__()
+        
+        self.gru1 = nn.GRU(input_size=input_size1, hidden_size=hidden_size, num_layers=1, batch_first=True)
+        self.bn1 = nn.BatchNorm1d(hidden_size)
+        
+        self.gru2 = nn.GRU(input_size=input_size2, hidden_size=hidden_size, num_layers=1, batch_first=True)
+        self.bn2 = nn.BatchNorm1d(hidden_size)
+        
+        self.concat = nn.Linear(2*hidden_size, 2*hidden_size)
+        
+        self.fc = nn.Linear(2*hidden_size, output_size)
 
-# 定义模型
-class GRUModel_(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=1):
-        super(GRUModel, self).__init__()
-        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers)
-        self.bn = nn.BatchNorm1d(hidden_size)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-        # print(x)
-        # print(x.shape)
-        # print(x.dtype)
-        output, _ = self.gru(x)
-        # print("second layer")
-        # print(output.shape)
-        output = self.bn(output)
-        output = self.fc(output)
-        return output
-
-class GRUModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=1, activation="relu"):
-        super(GRUModel, self).__init__()
-        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers)
-        self.bn = nn.BatchNorm1d(hidden_size)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-        if activation == "relu": self.activation = F.relu
-
-    def forward(self, x):
-        output, _ = self.gru(x)
-        output = self.bn(output)
-        output = self.activation(output)
-        output = self.fc(output)
-        return output
-
-def loss_fn(y_pred, y_true):
-    y = torch.cat((y_pred.view(1, -1), y_true.view(1, -1)), dim=0)
-    corr = torch.corrcoef(y)[0, 1]
-    return -corr
-
-# loss_fn = nn.MSELoss()
-
+    def forward(self, x1, x2):
+        out1, _ = self.gru1(x1) 
+        out1 = self.bn1(out1[:, -1, :])
+        
+        out2, _ = self.gru2(x2)
+        out2 = self.bn2(out2[:, -1, :])
+        
+        out = torch.cat([out1, out2], dim=1)
+        out = self.concat(out)
+        out = self.fc(out)
+        return out
+        
 # 定义训练函数
 def train(model, optimizer, train_loader, device):
     model.train()
     train_loss = 0
-    for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(device), target.to(device)
+    for batch_idx, (x1, x2, target) in enumerate(train_loader):
+        x1, x2, target = x1.to(device), x2.to(device), target.to(device)
         optimizer.zero_grad()
         # print("shit")
         # print(data.shape)
 
-        output = model(data)
+        output = model(x1, x2)
         loss = loss_fn(output, target)
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
     return train_loss / len(train_loader)
 
-
-
-# python main.py --end 2020-07-01
-# python main.py --end 2016-12-32
-# python main.py --end 2017-06-31
-# python main.py --end 2017-12-32
-# python main.py --end 2018-06-31
-# python main.py --end 2018-12-32
-# python main.py --end 2019-06-31
-# python main.py --end 2019-12-32
-# python main.py --end 2020-06-31
-# python main.py --end 2020-12-32
-# python main.py --end 2021-06-31
-# python main.py --end 2021-12-32
-# python main.py --end 2022-06-31
-# python main.py --end 2022-12-32
-# python main.py --end 2023-06-31
+# python train.py --end 2020-07-01
+# python train.py --end 2016-12-32
+# python train.py --end 2017-06-31
+# python train.py --end 2017-12-32
+# python train.py --end 2018-06-31
+# python train.py --end 2018-12-32
+# python train.py --end 2019-06-31
+# python train.py --end 2019-12-32
+# python train.py --end 2020-06-31
+# python train.py --end 2020-12-32
+# python train.py --end 2021-06-31
+# python train.py --end 2021-12-32
+# python train.py --end 2022-06-31
+# python train.py --end 2022-12-32
+# python train.py --end 2023-06-31
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--end", type=str, help="end date", default="John")
     args = parser.parse_args()
 
-
-    file_list_init = get_file_list('./full_data/min_datapoint/')
+    min_file = os.listdir('./full_data/min_datapoint/')
+    day_file = os.listdir('./full_data/day_datapoint/')
     file_list = []
     test_end = args.end # '2020-07-01'
 
-    for i in range (len(file_list_init)):
-        if i % 5 == 0 and file_list_init[i][-14:] <= test_end:
-            file_list.append(file_list_init[i])
+    for i in range (len(day_file)):
+        if i % 5 == 0 and day_file[i][-14:] <= test_end:
+            file_list.append(day_file[i])
 
+    for file in file_list:
+        if file not in min_file:
+            print(f"file {file} not in min_file")
+            exit()
     train_len = int(len(file_list) * 4 / 5)
     train_list = file_list[:train_len]
     test_list = file_list[train_len:]
     print(train_list)
     print(test_list)
 
-
-    train_dataset = MyDataset(train_list)
-    test_dataset = MyDataset(test_list)
+    train_dataset = double_dataset(train_list)
+    test_dataset = double_dataset(test_list)
 
     # 设置超参数
-    input_size = 1920
+    input_size1 = 6
+    input_size2 = 6
     hidden_size = 30
     output_size = 1
     learning_rate = 0.0001
@@ -120,14 +105,12 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
-
-    # 创建模型和优化器
-    model = GRUModel(input_size, hidden_size, output_size)
+    # Instantiate model
+    model = ReturnModel(input_size1=input_size1, input_size2=input_size2, hidden_size=hidden_size, output_size=output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     device = torch.device('cpu')
     print(model)
-
-
+    
     # 训练模型
     best_test_loss = 0
     best_train_loss = 0
@@ -141,9 +124,9 @@ if __name__ == "__main__":
         test_output = []
         test_target = []
         with torch.no_grad():
-            for data, target in test_loader:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
+            for x1, x2, target in test_loader:
+                x1, x2, target = x1.to(device), x2.to(device), target.to(device)
+                output = model(x1, x2)
                 test_output.append(output)
                 test_target.append(target)
 

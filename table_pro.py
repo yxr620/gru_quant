@@ -1,5 +1,4 @@
 import os
-import pickle
 import pandas as pd
 import numpy as np
 
@@ -7,24 +6,23 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager, Pool
 from tqdm import tqdm
-from functools import partial
-from utils import is_trading_day
-from PyLocalData import d
+# from PyLocalData import d
 
-
+# read all table from dir
+# return date_list(containing all date) table_list(containing all table dataframe)
 def read_table(dir):
     file_list = os.listdir(dir)
     print(file_list)
     table_list = []
     date_list = []
-    for file in file_list:
+    for file in tqdm(file_list):
         date_list.append(datetime.strptime(file[:-4], "%Y-%m-%d"))
         table_list.append(pd.read_csv(dir + file))
     
     print("finish load")
     return date_list, table_list
 
-# download all raw table and save the raw table to disks
+# read raw tables from feather file and save the raw table to disks
 def save_adj_table(args):
     api, date, file = args
 
@@ -45,7 +43,10 @@ def save_adj_table(args):
     new_table.to_csv(f"full_data/adj_table/{date.strftime('%Y-%m-%d')}.csv", index=False)
     print(date)
 
-def get_feature_sep(table, stock):
+
+# generate the feature for 15min data
+# return list of (6, 16)
+def get_feature_sep(table):
     stock_df = table
     result = [[], [], [], [], [], []]
     for index, row in stock_df[["open","high","low","close","volume","amount"]].iterrows():
@@ -76,7 +77,39 @@ def get_feature_sep(table, stock):
 
     return result
 
-# save table ... without delisting stock, save to ./full_data/min_table
+# generate the feature for 15min data
+# return list of (6, 1)
+def get_feature_day(table):
+    # open high low close vwap volume
+    result = [[], [], [], [], [], []]
+    
+    open = table["open"].iloc[0]
+    high = table["high"].max()
+    low = table["low"].min()
+    if low == 0:
+        low = table["low"].sort_values().iloc[1]
+    close = table["close"].iloc[-1]
+    if close == 0:
+        close = table["close"].iloc[-2]
+    vwap = table["amount"].sum()
+    volume = table["volume"].sum()
+    result[0].append(open)
+    result[1].append(high)
+    result[2].append(low)
+    result[3].append(close)
+
+    if volume == 0:
+        result[4].append(open)
+        result[5].append(0)
+    else:
+        result[4].append(vwap / volume)
+        result[5].append(volume)
+
+    return result
+
+# save table ... without delisting stock, save to ./full_data/min_table. table in the following format:
+# code open high low close vwap volume
+# str  list ...
 def process_table_all(args):
     date, table = args
     stock_set = set(table["code"])
@@ -90,7 +123,7 @@ def process_table_all(args):
     stock_list = []
     table_group = table.groupby('code')
     for stock in stock_set:
-        result = get_feature_sep(table_group.get_group(stock).reset_index(drop=True), stock)
+        result = get_feature_sep(table_group.get_group(stock).reset_index(drop=True))
         if all(element == 0 for element in result[5]):
             continue
         stock_list.append(stock)
@@ -113,6 +146,48 @@ def process_table_all(args):
     stock_table.to_csv(f"./full_data/min_table/{date.strftime('%Y-%m-%d')}.csv", index=False)
     print(date.strftime('%Y-%m-%d'))
 
+# save table for day data in the following format:
+# code open high low close vwap volume
+# str  list ...
+def process_table_day(args):
+    date, table = args
+    stock_set = set(table["code"])
+
+    open = []
+    high = []
+    low = []
+    close = []
+    vwap = []
+    volume = []
+    stock_list = []
+    table_group = table.groupby('code')
+    for stock in stock_set:
+        result = get_feature_day(table_group.get_group(stock).reset_index(drop=True))
+        # print(result)
+        if all(element == 0 for element in result[5]):
+            continue
+
+        stock_list.append(stock)
+        open.append(result[0])
+        high.append(result[1])
+        low.append(result[2])
+        close.append(result[3])
+        vwap.append(result[4])
+        volume.append(result[5])
+
+    stock_table = pd.DataFrame(list(stock_list), columns=["code"])
+    stock_table["open"] = open
+    stock_table["high"] = high
+    stock_table["low"] = low
+    stock_table["close"] = close
+    stock_table["vwap"] = vwap
+    stock_table["volume"] = volume
+
+    # print(stock_table)
+    # exit()
+    stock_table.to_csv(f"./full_data/day_table/{date.strftime('%Y-%m-%d')}.csv", index=False)
+    print(date.strftime('%Y-%m-%d'))
+
 # read adj table and generate down sampled table 
 def generate_all_table():
     date_list, table_list = read_table("./full_data/adj_table/")
@@ -123,6 +198,17 @@ def generate_all_table():
     args_list = [(date_list[i], table_list[i]) for i in range(len(date_list))]
     with Pool(processes=4) as pool:
         pool.map(process_table_all, args_list)
+
+# read adj table and generate day table
+def generate_day_table():
+    date_list, table_list = read_table("./full_data/adj_table/")
+
+    # for i in range(len(date_list)):
+    #     process_table_day([date_list[i], table_list[i]])
+
+    args_list = [(date_list[i], table_list[i]) for i in range(len(date_list))]
+    with Pool(processes=4) as pool:
+        pool.map(process_table_day, args_list)
 
 
 # using adj factor to adjust raw table and save it
@@ -140,19 +226,20 @@ def adjtable():
     # for i in range(len(args_list)):
     #     save_adj_table(args_list[i])
 
-
     args_list = [(d, date_list[i], file_list[i]) for i in range(len(date_list))]
     with Pool(processes=4) as pool:
         pool.map(save_adj_table, args_list)
 
 if __name__ == "__main__":
     # read feather table, adj factor and save the table to file
-    adjtable()
+    # adjtable()
 
     # generate table with no normalization ...
     # table contain all stock without delisting
-    generate_all_table()
+    # generate_all_table()
 
+    # generate day table
+    generate_day_table()
 
 
 
