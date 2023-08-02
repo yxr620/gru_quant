@@ -27,6 +27,7 @@ class ReturnModel(nn.Module):
         out = self.fc(out)
         return out
 
+# This is the correct model taking time serial input
 class GRUModel_serial(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
@@ -42,6 +43,7 @@ class GRUModel_serial(nn.Module):
         out = self.fc(out)
         return out
 
+# This model is wrong
 class GRUModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers=1):
         super(GRUModel, self).__init__()

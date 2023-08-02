@@ -48,7 +48,7 @@ def loss_fn(y_pred, y_true):
 
 
 # the file name of required datapoint. Only the name needed not the entire dir
-class MyDataset(Dataset):
+class single_dataset(Dataset):
     def __init__(self, file_list):
         self.target = []
         self.feature = []
@@ -57,7 +57,7 @@ class MyDataset(Dataset):
         for file in tqdm(file_list):
             day_data = np.loadtxt(file, dtype=str)
             for i in range(day_data.shape[0]):
-                info, feature, target = get_feature(day_data[i])
+                info, feature, target = get_min_feature(day_data[i])
                 self.info.append(info)
                 self.feature.append(feature)
                 self.target.append(target)
@@ -68,8 +68,7 @@ class MyDataset(Dataset):
         self.feature = torch.tensor(self.feature, dtype=torch.float32)
         self.target = torch.tensor(self.target, dtype=torch.float32)
         print(self.feature.shape)
-        # print(len(self.target))
-        # print(len(self.feature))
+
 
     def __getitem__(self, index):
         x = self.feature[index]

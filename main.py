@@ -4,44 +4,9 @@ import pandas as pd
 import argparse
 import torch.nn.functional as F
 
-from utils import MyDataset, get_file_list
+from utils import single_dataset, get_file_list
 from torch.utils.data import DataLoader
-
-
-# 定义模型
-class GRUModel_(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=1):
-        super(GRUModel, self).__init__()
-        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers)
-        self.bn = nn.BatchNorm1d(hidden_size)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-        # print(x)
-        # print(x.shape)
-        # print(x.dtype)
-        output, _ = self.gru(x)
-        # print("second layer")
-        # print(output.shape)
-        output = self.bn(output)
-        output = self.fc(output)
-        return output
-
-class GRUModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=1, activation="relu"):
-        super(GRUModel, self).__init__()
-        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers)
-        self.bn = nn.BatchNorm1d(hidden_size)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-        if activation == "relu": self.activation = F.relu
-
-    def forward(self, x):
-        output, _ = self.gru(x)
-        output = self.bn(output)
-        output = self.activation(output)
-        output = self.fc(output)
-        return output
+from model import GRUModel_serial
 
 def loss_fn(y_pred, y_true):
     y = torch.cat((y_pred.view(1, -1), y_true.view(1, -1)), dim=0)
@@ -105,11 +70,11 @@ if __name__ == "__main__":
     print(test_list)
 
 
-    train_dataset = MyDataset(train_list)
-    test_dataset = MyDataset(test_list)
+    train_dataset = single_dataset(train_list)
+    test_dataset = single_dataset(test_list)
 
     # 设置超参数
-    input_size = 1920
+    input_size = 6          # six feature in one time step
     hidden_size = 30
     output_size = 1
     learning_rate = 0.0001
@@ -122,7 +87,7 @@ if __name__ == "__main__":
 
 
     # 创建模型和优化器
-    model = GRUModel(input_size, hidden_size, output_size)
+    model = GRUModel_serial(input_size, hidden_size, output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     device = torch.device('cpu')
     print(model)
@@ -152,20 +117,16 @@ if __name__ == "__main__":
             test_loss = loss_fn(pred, true)
         if(epoch % 10 == 0):
             y = torch.cat((pred.view(1, -1), true.view(1, -1)), dim=0)
-            print(y.shape)
-            print(y)
-            corr = torch.corrcoef(y)
-            print(corr)
             print(pred)
             print(true)
         print('Epoch: {}, Train Loss: {:.4f}, Test Loss: {:.4f}'.format(epoch+1, train_loss, test_loss))
         if best_test_loss > test_loss:
             best_test_loss = test_loss
-            torch.save(model.state_dict(), f"./full_data/result/{test_end}_model.pt")
+            torch.save(model.state_dict(), f"./full_data/result_min/{test_end}_model.pt")
     
     print(f"best train loss {best_train_loss}, best test loss {best_test_loss}")
 
-    with open("./full_data/result/loss.log", 'a') as f:
+    with open("./full_data/result_min/loss.log", 'a') as f:
         f.write(f'\nDate {test_end}')
         f.write(f'\nBest Train Loss: {best_train_loss}')
         f.write(f'\nBest Test Loss: {best_test_loss}')
