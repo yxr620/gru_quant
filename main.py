@@ -4,16 +4,9 @@ import pandas as pd
 import argparse
 import torch.nn.functional as F
 
-from utils import single_dataset, get_file_list
+from utils import single_dataset, get_file_list, loss_fn
 from torch.utils.data import DataLoader
 from model import GRUModel_serial
-
-def loss_fn(y_pred, y_true):
-    y = torch.cat((y_pred.view(1, -1), y_true.view(1, -1)), dim=0)
-    corr = torch.corrcoef(y)[0, 1]
-    return -corr
-
-# loss_fn = nn.MSELoss()
 
 # 定义训练函数
 def train(model, optimizer, train_loader, device):
