@@ -1,12 +1,12 @@
 import os
 import pandas as pd
 import numpy as np
+import argparse
 
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager, Pool
 from tqdm import tqdm
-# from PyLocalData import d
 
 # read all table from dir
 # return date_list(containing all date) table_list(containing all table dataframe)
@@ -213,6 +213,7 @@ def generate_day_table():
 
 # using adj factor to adjust raw table and save it
 def adjtable():
+    from PyLocalData import d
     d.start()
     dir = "./full_data/1min/"
     file_list = os.listdir(dir)
@@ -230,16 +231,27 @@ def adjtable():
     with Pool(processes=4) as pool:
         pool.map(save_adj_table, args_list)
 
+# python table_pro.py --adj --min --day
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--adj", action='store_true', help="processing adj table")
+    parser.add_argument("--min", action='store_true', help="processing adj table to min table")
+    parser.add_argument("--day", action='store_true', help="processing adj table to day table")
+    args = parser.parse_args()
+
+    print(args)
     # read feather table, adj factor and save the table to file
-    # adjtable()
+    if args.adj:
+        adjtable()
 
     # generate table with no normalization ...
     # table contain all stock without delisting
-    # generate_all_table()
+    if args.min:
+        generate_all_table()
 
     # generate day table
-    generate_day_table()
+    if args.day:
+        generate_day_table()
 
 
 

@@ -1,19 +1,27 @@
 # 使用方法
 
-将feather数据放置在`full_data/1min/`目录下。并且在full_data下创建min_table、min_datapoint、adj_table、result目录
+将feather数据放置在`full_data/1min/`目录下。并且在full_data下创建min_table、min_datapoint、day_table、day_datapoint、adj_table、result_min目录
 
 创建完目录之后运行如下指令进行数据处理：
 
 ```
-python table_pro.py
+python table_pro.py --adj --min --day
 ```
 该指令将会:
 1. 将feather数据转换成csv文件，并且加入复权因子；
 2. 将每天的分钟频数据转换成15min频的数据；
-第一步生成的csv文件放入`full_data/adj_table`目录下。第二部生成的15min频数据放入`full_data/min_table`目录下。
+3. 将每天的分钟频数据转换成日频的数据；
 
-之后运行`main.py`训练模型：
+第一步生成的csv文件放入`full_data/adj_table`目录下。第二步生成的15min频数据放入`full_data/min_table`目录下。第三步生成的日频数据放入`full_data/day_table`目录下。
 
+之后运行如下指令生成对应的15min数据点和日频数据点：
+```
+python gen_datapoint.py
+python gen_daypoint.py
+```
+通过`gen_datapoint.py`生成的15min数据点放入`full_data/min_datapoint`目录下。通过`gen_daypoint.py`生成的日频数据点放入`full_data/day_datapoint`目录下。
+
+之后运行`main.py`训练15min频的模型，并将结果放入`full_data/result_min`目录下。
 ```
 python main.py --end 2018-12-32
 ```
@@ -21,9 +29,9 @@ python main.py --end 2018-12-32
 
 最后使用如下指令在测试集上测试模型:
 ```
-python prediction.py --start 2019-01-01 --end 2019-06-31 --model 2018-12-32
+python prediction.py --start 2017-01-01 --end 2017-06-31 --model 2016-12-32 --type 1
 ```
-使用参数`--start`和`--end`指定测试的开始和结束时间，使用参数`model`指定要使用的模型。例如上面使用的模型就是使用2018-12-32这一天之前的所有数据训练的模型。
+使用参数`--start`和`--end`指定测试的开始和结束时间，使用参数`model`指定要使用的模型。例如上面使用的模型就是使用2018-12-32这一天之前的所有数据训练的模型。最后的参数type表示使用的模型种类，0代表15min频数据对应的模型；1代表15min频+日频数据对应的模型；2代表分两步训练模型对应的模型。
 
 # 15min数据处理
 
