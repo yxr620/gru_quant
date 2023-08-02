@@ -40,7 +40,7 @@ def save_adj_table(args):
     new_table['close'] = new_table['close'] * adjfactor['adjfactor']
     new_table['amount'] = new_table['amount'] * adjfactor['adjfactor']
     new_table.reset_index(inplace=True)
-    new_table.to_csv(f"full_data/adj_table/{date.strftime('%Y-%m-%d')}.csv", index=False)
+    new_table.to_feather(f"full_data/adj_table/{date.strftime('%Y-%m-%d')}.feather", index=False)
     print(date)
 
 
