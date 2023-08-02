@@ -1,8 +1,8 @@
-import torch
-import torch.nn as nn
 import pandas as pd
 import argparse
 import torch.nn.functional as F
+import torch
+import torch.nn as nn
 
 from utils import single_dataset, get_file_list
 from torch.utils.data import DataLoader
@@ -89,8 +89,8 @@ if __name__ == "__main__":
     # 创建模型和优化器
     model = GRUModel_serial(input_size, hidden_size, output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    device = torch.device('cpu')
-    print(model)
+    device = torch.device('cuda')
+    model.to(device)
 
 
     # 训练模型
