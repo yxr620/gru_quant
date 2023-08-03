@@ -4,13 +4,13 @@ import numpy as np
 import pickle
 import builtins 
 
-from multiprocessing import Manager, Pool
+from multiprocessing import current_process, Pool
 from datetime import datetime, timedelta
 from tqdm import tqdm
 
 # return date_list table_list
 def read_table(dir):
-    file_list = os.listdir(dir)[:600]
+    file_list = os.listdir(dir)[1300:]
     print(file_list)
     table_list = []
     date_list = []
@@ -38,6 +38,7 @@ def zscore_norm(table):
 # i: the selected date index
 # ]
 def process_daypoint(args):
+    # print("Process ID:", current_process().pid)
     date_list, table_list, i = args
     stock_set = set(table_list[i]["code"])
     # stock datetime    target  open    high    low close   vwap    volume
@@ -243,7 +244,7 @@ def generate_daypoint():
     #     process_daypoint([date_list, table_list, i])
 
     args_list = [( date_list, table_list, i) for i in range(39, len(date_list) - 10)]
-    with Pool(processes=20) as pool:
+    with Pool(processes=24) as pool:
         pool.map(process_daypoint, args_list)
 
 

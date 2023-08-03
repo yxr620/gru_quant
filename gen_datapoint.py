@@ -4,19 +4,18 @@ import numpy as np
 
 
 from multiprocessing import Manager, Pool
-from scipy.stats import zscore
 from datetime import datetime, timedelta
 from tqdm import tqdm
 
 # return date_list table_list
 def read_table(dir):
-    file_list = os.listdir(dir)
+    file_list = os.listdir(dir)[550:1000]
     print(file_list)
     table_list = []
     date_list = []
     for file in file_list:
-        date_list.append(datetime.strptime(file[:-4], "%Y-%m-%d"))
-        table_list.append(pd.read_csv(dir + file))
+        date_list.append(datetime.strptime(file.split('.')[0], "%Y-%m-%d"))
+        table_list.append(pd.read_feather(dir + file))
     
     return date_list, table_list
 
@@ -47,7 +46,7 @@ def process_datapoint_all(args):
     volume = []
 
     # print(date_list[i].strftime('%Y-%m-%d'))
-    for stock in stock_set:
+    for stock in (stock_set):
         # judge if the stock satisfy the requirements
         satisfy = 1
         j = i - 19
@@ -59,8 +58,8 @@ def process_datapoint_all(args):
         basic_info.append([stock, date_list[i].strftime('%Y-%m-%d')])
 
         # get target
-        today_close = eval(table_list[i][table_list[i]["code"] == stock]["close"].item())[-1]
-        future_close = eval(table_list[i + 10][table_list[i + 10]["code"] == stock]["close"].item())[-1]
+        today_close = table_list[i][table_list[i]["code"] == stock]["close"].item()[-1]
+        future_close = table_list[i + 10][table_list[i + 10]["code"] == stock]["close"].item()[-1]
         target.append([(future_close - today_close) / today_close])
 
         # get feature
@@ -68,12 +67,12 @@ def process_datapoint_all(args):
         result = [[], [], [], [], [], []]
         while j <= i:
             stock_table = table_list[j][table_list[j]["code"] == stock]
-            result[0].extend(eval(stock_table["open"].tolist()[0]))
-            result[1].extend(eval(stock_table["high"].tolist()[0]))
-            result[2].extend(eval(stock_table["low"].tolist()[0]))
-            result[3].extend(eval(stock_table["close"].tolist()[0]))
-            result[4].extend(eval(stock_table["vwap"].tolist()[0]))
-            tmp_v = eval(stock_table["volume"].tolist()[0])
+            result[0].extend(list(stock_table["open"].tolist()[0]))
+            result[1].extend(list(stock_table["high"].tolist()[0]))
+            result[2].extend(list(stock_table["low"].tolist()[0]))
+            result[3].extend(list(stock_table["close"].tolist()[0]))
+            result[4].extend(list(stock_table["vwap"].tolist()[0]))
+            tmp_v = list(stock_table["volume"].tolist()[0])
             result[5].extend([1 if x == 0 else x for x in tmp_v])
             # if all(element == 0 for element in tmp_v):
             #     result[5].extend([1] * len(tmp_v))
@@ -121,7 +120,7 @@ def generate_datapoint():
 
     # parallel
     args_list = [( date_list, table_list, i) for i in range(20, len(date_list) - 10)]
-    with Pool(processes=4) as pool:
+    with Pool(processes=10) as pool:
         pool.map(process_datapoint_all, args_list)
 
 if __name__ == "__main__":

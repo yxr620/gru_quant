@@ -232,7 +232,7 @@ def adjtable():
     with Pool(processes=20) as pool:
         pool.map(save_adj_table, args_list)
 
-# python table_pro.py --adj --min --day
+# python table_pro.py --adj --min --day --fix
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--adj", action='store_true', help="processing adj table")
