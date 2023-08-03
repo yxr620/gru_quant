@@ -16,8 +16,8 @@ def read_table(dir):
     table_list = []
     date_list = []
     for file in tqdm(file_list):
-        date_list.append(datetime.strptime(file[:-4], "%Y-%m-%d"))
-        table_list.append(pd.read_csv(dir + file))
+        date_list.append(datetime.strptime(file.split('.')[0], "%Y-%m-%d"))
+        table_list.append(pd.read_feather(dir + file))
     
     print("finish load")
     return date_list, table_list
@@ -40,7 +40,7 @@ def save_adj_table(args):
     new_table['close'] = new_table['close'] * adjfactor['adjfactor']
     new_table['amount'] = new_table['amount'] * adjfactor['adjfactor']
     new_table.reset_index(inplace=True)
-    new_table.to_feather(f"full_data/adj_table/{date.strftime('%Y-%m-%d')}.feather", index=False)
+    new_table.to_feather(f"full_data/adj_table/{date.strftime('%Y-%m-%d')}.feather")
     print(date)
 
 
@@ -143,7 +143,7 @@ def process_table_all(args):
     stock_table["volume"] = volume
 
 
-    stock_table.to_csv(f"./full_data/min_table/{date.strftime('%Y-%m-%d')}.csv", index=False)
+    stock_table.to_feather(f"./full_data/min_table/{date.strftime('%Y-%m-%d')}.feather")
     print(date.strftime('%Y-%m-%d'))
 
 # save table for day data in the following format:
@@ -185,7 +185,7 @@ def process_table_day(args):
 
     # print(stock_table)
     # exit()
-    stock_table.to_csv(f"./full_data/day_table/{date.strftime('%Y-%m-%d')}.csv", index=False)
+    stock_table.to_feather(f"./full_data/day_table/{date.strftime('%Y-%m-%d')}.feather")
     print(date.strftime('%Y-%m-%d'))
 
 # read adj table and generate down sampled table 
@@ -196,7 +196,7 @@ def generate_all_table():
     #     process_table_all([date_list[i], table_list[i]])
 
     args_list = [(date_list[i], table_list[i]) for i in range(len(date_list))]
-    with Pool(processes=4) as pool:
+    with Pool(processes=15) as pool:
         pool.map(process_table_all, args_list)
 
 # read adj table and generate day table
@@ -207,7 +207,7 @@ def generate_day_table():
     #     process_table_day([date_list[i], table_list[i]])
 
     args_list = [(date_list[i], table_list[i]) for i in range(len(date_list))]
-    with Pool(processes=4) as pool:
+    with Pool(processes=20) as pool:
         pool.map(process_table_day, args_list)
 
 
@@ -228,7 +228,7 @@ def adjtable():
     #     save_adj_table(args_list[i])
 
     args_list = [(d, date_list[i], file_list[i]) for i in range(len(date_list))]
-    with Pool(processes=4) as pool:
+    with Pool(processes=20) as pool:
         pool.map(save_adj_table, args_list)
 
 # python table_pro.py --adj --min --day
