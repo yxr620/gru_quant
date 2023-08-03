@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import pandas as pd
 import os
 
 from torch.utils.data import DataLoader, Dataset
@@ -45,6 +46,19 @@ def loss_fn(y_pred, y_true):
     corr = torch.corrcoef(y)[0, 1]
     return -corr
 
+# delete stock whose adjfactor is empty, resulting in nan for open, high, low, close
+def fix_table():
+    min_dir = "./full_data/min_table/2019-12-13.feather"
+    day_dir = "./full_data/day_table/2019-12-13.feather"
+    stock = "000043.SZ"
+    min_table = pd.read_feather(min_dir)
+    day_table = pd.read_feather(day_dir)
+
+    min_table = min_table[min_table['code'] != stock].reset_index(drop=True)
+    day_table = day_table[day_table['code'] != stock].reset_index(drop=True)
+
+    min_table.to_feather(min_dir)
+    day_table.to_feather(day_dir)
 
 # the file name of required datapoint. Only the name needed not the entire dir
 class single_dataset(Dataset):

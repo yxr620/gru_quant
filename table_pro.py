@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager, Pool
 from tqdm import tqdm
+from utils import fix_table
 
 # read all table from dir
 # return date_list(containing all date) table_list(containing all table dataframe)
@@ -237,6 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--adj", action='store_true', help="processing adj table")
     parser.add_argument("--min", action='store_true', help="processing adj table to min table")
     parser.add_argument("--day", action='store_true', help="processing adj table to day table")
+    parser.add_argument("--fix", action='store_true', help="fix nan value in min and day table")
     args = parser.parse_args()
 
     print(args)
@@ -252,6 +254,9 @@ if __name__ == "__main__":
     # generate day table
     if args.day:
         generate_day_table()
+
+    if args.fix:
+        fix_table()
 
 
 
