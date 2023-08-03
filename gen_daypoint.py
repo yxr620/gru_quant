@@ -1,7 +1,8 @@
 import os
-import warnings
 import pandas as pd
 import numpy as np
+import pickle
+import builtins 
 
 from multiprocessing import Manager, Pool
 from scipy.stats import zscore
@@ -63,7 +64,7 @@ def process_daypoint(args):
         j += 1
 
     # generate daypoint for each stock
-    for stock in stock_set:
+    for stock in tqdm(stock_set):
 
         # get basic info [stock, date]
         basic_info.append([stock, date_list[i].strftime('%Y-%m-%d')])
@@ -110,6 +111,8 @@ def process_daypoint(args):
     target = zscore_norm(target)
 
     day_data = np.concatenate([basic_info, target, open, high, low, close, vwap, volume], axis=1)
+    # with builtins.open(f"./full_data/day_datapoint/{date_list[i].strftime('%Y-%m-%d')}.pickle", 'wb') as f:
+    #     pickle.dump(day_data, f)
     np.savetxt(f"./full_data/day_datapoint/{date_list[i].strftime('%Y-%m-%d')}.txt", day_data, fmt="%s")
     print(date_list[i].strftime('%Y-%m-%d'))
 
@@ -239,19 +242,19 @@ def generate_daypoint():
     print(date_list[39:-10])
 
     # serial 
-    for i in range(39, len(date_list) - 10):
-        process_daypoint([date_list, table_list, i])
+    # for i in range(39, len(date_list) - 10):
+    #     process_daypoint([date_list, table_list, i])
 
 
-    # args_list = [( date_list, table_list, i) for i in range(39, len(date_list) - 10)]
-    # with Pool(processes=6) as pool:
-    #     pool.map(process_daypoint, args_list)
+    args_list = [( date_list, table_list, i) for i in range(39, len(date_list) - 10)]
+    with Pool(processes=6) as pool:
+        pool.map(process_daypoint, args_list)
 
 
 
 if __name__ == "__main__":
-    # generate_daypoint()
+    generate_daypoint()
 
-    generate_daypoint_week()
+    # generate_daypoint_week()
 
 
