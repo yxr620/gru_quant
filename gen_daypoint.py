@@ -5,19 +5,18 @@ import pickle
 import builtins 
 
 from multiprocessing import Manager, Pool
-from scipy.stats import zscore
 from datetime import datetime, timedelta
 from tqdm import tqdm
 
 # return date_list table_list
 def read_table(dir):
-    file_list = os.listdir(dir)
+    file_list = os.listdir(dir)[:600]
     print(file_list)
     table_list = []
     date_list = []
-    for file in file_list:
-        date_list.append(datetime.strptime(file[:-4], "%Y-%m-%d"))
-        table_list.append(pd.read_csv(dir + file))
+    for file in tqdm(file_list):
+        date_list.append(datetime.strptime(file.split('.')[0], "%Y-%m-%d"))
+        table_list.append(pd.read_feather(dir + file))
     
     return date_list, table_list
 
@@ -64,26 +63,25 @@ def process_daypoint(args):
         j += 1
 
     # generate daypoint for each stock
-    for stock in tqdm(stock_set):
-
+    for stock in stock_set:
         # get basic info [stock, date]
         basic_info.append([stock, date_list[i].strftime('%Y-%m-%d')])
 
         # get target
-        today_close = eval(table_list[i][table_list[i]["code"] == stock]["close"].item())[-1]
-        future_close = eval(table_list[i + 10][table_list[i + 10]["code"] == stock]["close"].item())[-1]
+        today_close = table_list[i][table_list[i]["code"] == stock]["close"].item()[-1]
+        future_close = table_list[i + 10][table_list[i + 10]["code"] == stock]["close"].item()[-1]
         target.append([(future_close - today_close) / today_close])
 
         # get feature
         result = [[], [], [], [], [], []]
         for iter_table in group_table:
             stock_table = iter_table.get_group(stock).reset_index(drop=True)
-            result[0].extend(eval(stock_table["open"].tolist()[0]))
-            result[1].extend(eval(stock_table["high"].tolist()[0]))
-            result[2].extend(eval(stock_table["low"].tolist()[0]))
-            result[3].extend(eval(stock_table["close"].tolist()[0]))
-            result[4].extend(eval(stock_table["vwap"].tolist()[0]))
-            tmp_v = eval(stock_table["volume"].tolist()[0]) # set volume to 1 if it is 0
+            result[0].extend(list(stock_table["open"].tolist()[0]))
+            result[1].extend(list(stock_table["high"].tolist()[0]))
+            result[2].extend(list(stock_table["low"].tolist()[0]))
+            result[3].extend(list(stock_table["close"].tolist()[0]))
+            result[4].extend(list(stock_table["vwap"].tolist()[0]))
+            tmp_v = list(stock_table["volume"].tolist()[0]) # set volume to 1 if it is 0
             result[5].extend([1 if x == 0 else x for x in tmp_v]) 
 
         open.append(result[0])
@@ -234,7 +232,6 @@ def generate_daypoint_week():
     with Pool(processes=6) as pool:
         pool.map(process_daypoint_week, args_list)
 
-
 # generate day datapoint
 def generate_daypoint():
     date_list, table_list = read_table("./full_data/day_table/")
@@ -245,9 +242,8 @@ def generate_daypoint():
     # for i in range(39, len(date_list) - 10):
     #     process_daypoint([date_list, table_list, i])
 
-
     args_list = [( date_list, table_list, i) for i in range(39, len(date_list) - 10)]
-    with Pool(processes=6) as pool:
+    with Pool(processes=20) as pool:
         pool.map(process_daypoint, args_list)
 
 
