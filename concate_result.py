@@ -9,7 +9,7 @@ def concate_result(dir):
     for file in file_list_init:
         if file[-3:] == 'csv':
             table = pd.read_csv(dir + file)
-            table = table.drop(table.columns[0], axis=1)
+            # table = table.drop(table.columns[0], axis=1)
             table_list.append(table)
             file_list.append(file)
             print(table)

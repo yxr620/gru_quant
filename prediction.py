@@ -160,13 +160,13 @@ if __name__ == "__main__":
             f.write(f'\nprediction Loss: {test_loss}')
     if args.type == "1":
         test_dataset = double_dataset(test_list)
-        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_day")
+        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_day/")
         with open("./full_data/result_day/test.log", 'a') as f:
             f.write(f'\nDate {test_end}')
             f.write(f'\nprediction Loss: {test_loss}')
     if args.type == "2":
         test_dataset = double_dataset(test_list)
-        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_double")
+        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_double/")
         with open("./full_data/result_double/test.log", 'a') as f:
             f.write(f'\nDate {test_end}')
             f.write(f'\nprediction Loss: {test_loss}')
