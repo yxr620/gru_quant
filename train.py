@@ -5,34 +5,8 @@ import os
 
 from torch.utils.data import Dataset, DataLoader
 from utils import double_dataset, loss_fn
+from model import ReturnModel
 
-# 模型定义
-class ReturnModel(nn.Module):
-    def __init__(self, input_size1, input_size2, hidden_size, output_size):
-        super().__init__()
-        
-        self.gru1 = nn.GRU(input_size=input_size1, hidden_size=hidden_size, num_layers=1, batch_first=True)
-        self.bn1 = nn.BatchNorm1d(hidden_size)
-        
-        self.gru2 = nn.GRU(input_size=input_size2, hidden_size=hidden_size, num_layers=1, batch_first=True)
-        self.bn2 = nn.BatchNorm1d(hidden_size)
-        
-        self.concat = nn.Linear(2*hidden_size, 2*hidden_size)
-        
-        self.fc = nn.Linear(2*hidden_size, output_size)
-
-    def forward(self, x1, x2):
-        out1, _ = self.gru1(x1) 
-        out1 = self.bn1(out1[:, -1, :])
-        
-        out2, _ = self.gru2(x2)
-        out2 = self.bn2(out2[:, -1, :])
-        
-        out = torch.cat([out1, out2], dim=1)
-        out = self.concat(out)
-        out = self.fc(out)
-        return out
-        
 # 定义训练函数
 def train(model, optimizer, train_loader, device):
     model.train()
@@ -108,7 +82,8 @@ if __name__ == "__main__":
     # Instantiate model
     model = ReturnModel(input_size1=input_size1, input_size2=input_size2, hidden_size=hidden_size, output_size=output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    device = torch.device('cpu')
+    device = torch.device('cuda')
+    model.to(device)
     print(model)
     
     # 训练模型
@@ -134,21 +109,16 @@ if __name__ == "__main__":
             true = torch.concat(test_target).squeeze()
             test_loss = loss_fn(pred, true)
         if(epoch % 10 == 0):
-            y = torch.cat((pred.view(1, -1), true.view(1, -1)), dim=0)
-            print(y.shape)
-            print(y)
-            corr = torch.corrcoef(y)
-            print(corr)
             print(pred)
             print(true)
         print('Epoch: {}, Train Loss: {:.4f}, Test Loss: {:.4f}'.format(epoch+1, train_loss, test_loss))
         if best_test_loss > test_loss:
             best_test_loss = test_loss
-            torch.save(model.state_dict(), f"./full_data/result/{test_end}_model.pt")
+            torch.save(model.state_dict(), f"./full_data/result_day/{test_end}_model.pt")
     
     print(f"best train loss {best_train_loss}, best test loss {best_test_loss}")
 
-    with open("./full_data/result/loss.log", 'a') as f:
+    with open("./full_data/result_day/loss.log", 'a') as f:
         f.write(f'\nDate {test_end}')
         f.write(f'\nBest Train Loss: {best_train_loss}')
         f.write(f'\nBest Test Loss: {best_test_loss}')

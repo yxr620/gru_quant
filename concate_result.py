@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 
-def concate_result():
-    dir = "./full_data/result/"
+def concate_result(dir):
+    dir = "./full_data/result_min/"
     file_list_init = os.listdir(dir)
     file_list = []
     table_list = []
@@ -16,10 +16,11 @@ def concate_result():
 
 
     result = pd.concat(table_list, axis=0)
-    result.to_csv("./full_data/result/concate_result.csv", index=False)
+    result.to_csv(dir + "concate_result.csv", index=False)
 
 if __name__ == "__main__":
-    concate_result()
+    dir = "./full_data/result_min/"
+    concate_result(dir)
     # df1 = pd.DataFrame({'A': [1, 2], 'B': [4, 5]})
     # df2 = pd.DataFrame({'A': [7, 8, 9], 'B': [10, 11, 12]})
 

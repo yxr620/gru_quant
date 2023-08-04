@@ -25,7 +25,6 @@ def train_day(model, optimizer, train_loader, device):
     return train_loss / len(train_loader)
 
 # training using 15min data with frozen day model
-
 # training using both x1 and x2
 def train(model, optimizer, train_loader, device):
     model.train()
@@ -43,21 +42,21 @@ def train(model, optimizer, train_loader, device):
         train_loss += loss.item()
     return train_loss / len(train_loader)
 
-# python train.py --end 2020-07-01
-# python train.py --end 2016-12-32
-# python train.py --end 2017-06-31
-# python train.py --end 2017-12-32
-# python train.py --end 2018-06-31
-# python train.py --end 2018-12-32
-# python train.py --end 2019-06-31
-# python train.py --end 2019-12-32
-# python train.py --end 2020-06-31
-# python train.py --end 2020-12-32
-# python train.py --end 2021-06-31
-# python train.py --end 2021-12-32
-# python train.py --end 2022-06-31
-# python train.py --end 2022-12-32
-# python train.py --end 2023-06-31
+# python train_sep.py --end 2020-07-01
+# python train_sep.py --end 2016-12-32
+# python train_sep.py --end 2017-06-31
+# python train_sep.py --end 2017-12-32
+# python train_sep.py --end 2018-06-31
+# python train_sep.py --end 2018-12-32
+# python train_sep.py --end 2019-06-31
+# python train_sep.py --end 2019-12-32
+# python train_sep.py --end 2020-06-31
+# python train_sep.py --end 2020-12-32
+# python train_sep.py --end 2021-06-31
+# python train_sep.py --end 2021-12-32
+# python train_sep.py --end 2022-06-31
+# python train_sep.py --end 2022-12-32
+# python train_sep.py --end 2023-06-31
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--end", type=str, help="end date", default="John")
@@ -101,7 +100,8 @@ if __name__ == "__main__":
     # Instantiate model
     day_model = GRUModel_serial(input_size2, hidden_size, output_size)
     optimizer = torch.optim.Adam(day_model.parameters(), lr=1e-3)
-    device = torch.device('cpu')
+    device = torch.device('cuda')
+    day_model.to(device)
     print(day_model)
 
     # train day model
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     # train hybrid model
     hybrid_model = SepModel(best_day_model, input_size1, hidden_size, output_size)
     optimizer = torch.optim.Adam(hybrid_model.parameters(), lr=learning_rate)
-    device = torch.device('cpu')
+    hybrid_model.to(device)
     print(hybrid_model)
     best_test_loss = 0
     best_train_loss = 0

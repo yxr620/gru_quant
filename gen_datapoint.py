@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 # return date_list table_list
 def read_table(dir):
-    file_list = os.listdir(dir)[550:1000]
+    file_list = os.listdir(dir)
     print(file_list)
     table_list = []
     date_list = []

@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import pandas as pd
 import os
+import multiprocessing
 
 from multiprocessing import Pool
 from torch.utils.data import DataLoader, Dataset
@@ -69,7 +70,7 @@ class single_dataset(Dataset):
         self.feature = []
         self.info = []
 
-        with Pool(processes=4) as pool:
+        with Pool(processes=15) as pool:
             results = pool.map(self.load_file, self.file_list)
 
         for info_list, feature_list, target_list in results:
@@ -109,7 +110,6 @@ class single_dataset(Dataset):
         return self.info[index]
 
 
-# 自定义数据集
 class double_dataset(Dataset):
     def __init__(self, file_list):
         self.target = []
@@ -117,47 +117,64 @@ class double_dataset(Dataset):
         self.feature2 = []
         self.info = []
 
-        min_dir = "./full_data/min_datapoint/"
-        day_dir = "./full_data/day_datapoint/"
-        for file in tqdm(file_list):
-            min_data = np.loadtxt(min_dir + file, dtype=str)
-            day_data = np.loadtxt(day_dir + file, dtype=str)
+        self.min_dir = "./full_data/min_datapoint/"
+        self.day_dir = "./full_data/day_datapoint/"
 
-            # get the same stock in both min and day data
-            min_stocks = min_data[:,0]  
-            day_stocks = day_data[:,0]
-            common_stocks = np.intersect1d(min_stocks, day_stocks)
-            common_mask_min = np.isin(min_data[:,0], common_stocks)
-            common_mask_day = np.isin(day_data[:,0], common_stocks)
-            common_min_data = min_data[common_mask_min]
-            common_day_data = day_data[common_mask_day]
-            # print(common_day_data)
-            for i in range(common_min_data.shape[0]):
-                info, feature, target = get_min_feature(common_min_data[i])
-                self.info.append(info)
-                self.feature1.append(feature)
-                self.target.append(target)
-            for i in range(common_day_data.shape[0]):
-                info, feature, target = get_day_feature(common_day_data[i])
-                self.feature2.append(feature)   
+        with Pool(processes=15) as pool:
+            results = pool.map(self.process_file, file_list)
+            
+        for feature1, feature2, target, info in results:
+            self.feature1.extend(feature1)
+            self.feature2.extend(feature2)
+            self.target.extend(target)
+            self.info.extend(info)
+            # print(info)
 
         self.feature1 = np.array(self.feature1)
         self.feature2 = np.array(self.feature2)
         self.target = np.array(self.target)
-        # the torch type must match the model type
         self.feature1 = torch.tensor(self.feature1, dtype=torch.float32)
         self.feature2 = torch.tensor(self.feature2, dtype=torch.float32)
         self.target = torch.tensor(self.target, dtype=torch.float32)
         print(self.feature1.shape)
         print(self.feature2.shape)
-        # print(len(self.target))
-        # print(len(self.feature))
+        # print(self.info)
+
+    def process_file(self, file):
+        print(file)
+        min_data = np.loadtxt(self.min_dir + file, dtype=str)
+        day_data = np.loadtxt(self.day_dir + file, dtype=str)
+
+        min_stocks = min_data[:,0]  
+        day_stocks = day_data[:,0]
+        common_stocks = np.intersect1d(min_stocks, day_stocks)
+        common_mask_min = np.isin(min_data[:,0], common_stocks)
+        common_mask_day = np.isin(day_data[:,0], common_stocks)
+        common_min_data = min_data[common_mask_min]
+        common_day_data = day_data[common_mask_day]
+
+        feature1 = []
+        target = []
+        info_result = []
+        feature2 = []
+        for i in range(common_min_data.shape[0]):
+            info, feature, target_val = get_min_feature(common_min_data[i])
+            feature1.append(feature)
+            target.append(target_val)
+            info_result.append(info)
+
+        for i in range(common_day_data.shape[0]):
+            info, feature, target_val = get_day_feature(common_day_data[i])
+            feature2.append(feature)
+
+        return feature1, feature2, target, info_result
 
     def __len__(self):
         return len(self.feature1)
       
     def __getitem__(self, index):
         return self.feature1[index], self.feature2[index], self.target[index]
+
     def get_info(self, index):
         return self.info[index]
 
