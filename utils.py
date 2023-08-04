@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 
+from multiprocessing import Pool
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
@@ -63,18 +64,19 @@ def fix_table():
 # the file name of required datapoint. Only the name needed not the entire dir
 class single_dataset(Dataset):
     def __init__(self, file_list):
+        self.file_list = file_list
         self.target = []
         self.feature = []
         self.info = []
 
-        for file in tqdm(file_list):
-            day_data = np.loadtxt(file, dtype=str)
-            for i in range(day_data.shape[0]):
-                info, feature, target = get_min_feature(day_data[i])
-                self.info.append(info)
-                self.feature.append(feature)
-                self.target.append(target)
-        
+        with Pool(processes=4) as pool:
+            results = pool.map(self.load_file, self.file_list)
+
+        for info_list, feature_list, target_list in results:
+            self.info.extend(info_list)
+            self.feature.extend(feature_list)
+            self.target.extend(target_list)
+
         self.feature = np.array(self.feature)
         self.target = np.array(self.target)
         # the torch type must match the model type
@@ -82,6 +84,18 @@ class single_dataset(Dataset):
         self.target = torch.tensor(self.target, dtype=torch.float32)
         print(self.feature.shape)
 
+    def load_file(self, file):
+        day_data = np.loadtxt(file, dtype=str)
+        info_list, feature_list, target_list = [], [], []
+
+        for i in range(day_data.shape[0]):
+            info, feature, target = get_min_feature(day_data[i])
+            info_list.append(info)
+            feature_list.append(feature)
+            target_list.append(target)
+
+        print(file)
+        return info_list, feature_list, target_list
 
     def __getitem__(self, index):
         x = self.feature[index]
