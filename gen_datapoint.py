@@ -113,7 +113,7 @@ def process_datapoint_all(args):
 
 def generate_datapoint():
     date_list, table_list = read_table("./full_data/min_table/")
-
+    print(date_list[20:-10])
     # serial 
     # for i in range(20, len(date_list) - 10):
     #     process_datapoint_all([date_list, table_list, i])
