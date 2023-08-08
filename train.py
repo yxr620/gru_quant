@@ -47,11 +47,12 @@ if __name__ == "__main__":
     min_file = os.listdir('./full_data/min_datapoint/')
     day_file = os.listdir('./full_data/day_datapoint/')
     file_list = []
-    test_end = args.end # '2020-07-01'
+    test_end = args.end
 
     for i in range (len(day_file)):
         if i % 5 == 0 and day_file[i][-14:] <= test_end:
             file_list.append(day_file[i])
+    file_list = file_list[:-2] # delete last two weeks to avoid data leak
 
     for file in file_list:
         if file not in min_file:

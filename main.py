@@ -55,6 +55,7 @@ if __name__ == "__main__":
     for i in range (len(file_list_init)):
         if i % 5 == 0 and file_list_init[i][-14:] <= test_end:
             file_list.append(file_list_init[i])
+    file_list = file_list[:-2]
 
     train_len = int(len(file_list) * 4 / 5)
     train_list = file_list[:train_len]
@@ -121,5 +122,5 @@ if __name__ == "__main__":
 
     with open("./full_data/result_min/loss.log", 'a') as f:
         f.write(f'\nDate {test_end}')
-        f.write(f'\nBest Train Loss: {best_train_loss}')
-        f.write(f'\nBest Test Loss: {best_test_loss}')
+        f.write(f'\nBest Train Loss: {best_train_loss:.5f}')
+        f.write(f'\nBest Test Loss: {best_test_loss:.5f}')
