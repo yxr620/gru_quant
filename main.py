@@ -3,6 +3,7 @@ import argparse
 import torch.nn.functional as F
 import torch
 import torch.nn as nn
+import time
 
 from utils import single_dataset, get_file_list, loss_fn
 from torch.utils.data import DataLoader
@@ -12,6 +13,7 @@ from model import GRUModel_serial
 def train(model, optimizer, train_loader, device):
     model.train()
     train_loss = 0
+    start = time.time()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -23,6 +25,8 @@ def train(model, optimizer, train_loader, device):
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
+    end = time.time()
+    print(f"epoch time: {end - start} seconds")
     return train_loss / len(train_loader)
 
 
@@ -114,6 +118,7 @@ if __name__ == "__main__":
             print(pred)
             print(true)
         print('Epoch: {}, Train Loss: {:.4f}, Test Loss: {:.4f}'.format(epoch+1, train_loss, test_loss))
+        continue
         if best_test_loss > test_loss:
             best_test_loss = test_loss
             torch.save(model.state_dict(), f"./full_data/result_min/{test_end}_model.pt")
