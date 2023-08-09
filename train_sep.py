@@ -65,11 +65,12 @@ if __name__ == "__main__":
     min_file = os.listdir('./full_data/min_datapoint/')
     day_file = os.listdir('./full_data/day_datapoint/')
     file_list = []
-    test_end = args.end # '2020-07-01'
+    test_end = args.end
 
     for i in range (len(day_file)):
         if i % 5 == 0 and day_file[i][-14:] <= test_end:
             file_list.append(day_file[i])
+    file_list = file_list[:-2] # delete the last two weeks
 
     for file in file_list:
         if file not in min_file:
@@ -105,8 +106,8 @@ if __name__ == "__main__":
     print(day_model)
 
     # train day model
-    best_test_loss = 0
-    best_train_loss = 0
+    best_test_loss = 100
+    best_train_loss = 100
     for epoch in range(num_epochs):
         train_loss = train_day(day_model, optimizer, train_loader, device)
         if best_train_loss > train_loss: best_train_loss = train_loss
@@ -134,16 +135,16 @@ if __name__ == "__main__":
 
     with open("./full_data/result_double/loss.log", 'a') as f:
         f.write(f'\nDate {test_end}')
-        f.write(f'\nBest day model Train Loss: {best_train_loss}')
-        f.write(f'\nBest day model Test Loss: {best_test_loss}')
+        f.write(f'\nBest day model Train Loss: {best_train_loss:.5f}')
+        f.write(f'\nBest day model Test Loss: {best_test_loss:.5f}')
 
     # train hybrid model
     hybrid_model = SepModel(best_day_model, input_size1, hidden_size, output_size)
     optimizer = torch.optim.Adam(hybrid_model.parameters(), lr=learning_rate)
     hybrid_model.to(device)
     print(hybrid_model)
-    best_test_loss = 0
-    best_train_loss = 0
+    best_test_loss = 100
+    best_train_loss = 100
     for epoch in range(num_epochs):
         train_loss = train(hybrid_model, optimizer, train_loader, device)
         if best_train_loss > train_loss: best_train_loss = train_loss
@@ -170,6 +171,6 @@ if __name__ == "__main__":
             torch.save(hybrid_model.state_dict(), f"./full_data/result_double/{test_end}_model.pt")
 
     with open("./full_data/result_double/loss.log", 'a') as f:
-        f.write(f'\nBest hybrid model Train Loss: {best_train_loss}')
-        f.write(f'\nBest hybrid model Test Loss: {best_test_loss}')
+        f.write(f'\nBest hybrid model Train Loss: {best_train_loss:.5f}')
+        f.write(f'\nBest hybrid model Test Loss: {best_test_loss:.5f}')
 

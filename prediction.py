@@ -4,18 +4,45 @@ import torch.nn as nn
 import pandas as pd
 import argparse
 import os
-import gc
-import sys
+import numpy as np
 
 from utils import single_dataset, get_file_list, double_dataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from model import ReturnModel, GRUModel_serial, SepModel
+from scipy.stats import pearsonr
 
 def loss_fn(y_pred, y_true):
     y = torch.cat((y_pred.view(1, -1), y_true.view(1, -1)), dim=0)
     corr = torch.corrcoef(y)[0, 1]
     return -corr
+
+def calculate_ic(group):
+    ic, _ = pearsonr(group['pred'], group['target'])
+    return ic
+
+# calculate IC, rank IC, etc
+def cal_ic(result, dir):
+    grouped = result.groupby('date')
+    result['pred_rank'] = result.groupby('date')['pred'].rank()
+    result['target_rank'] = result.groupby('date')['target'].rank()
+    ic_values = grouped.apply(lambda x: pearsonr(x['pred'], x['target'])[0])
+    rank_ic_values = grouped.apply(lambda x: pearsonr(x['pred_rank'], x['target_rank'])[0])
+
+    # IC mean etc
+    ic_mean = ic_values.mean()
+    ic_std = ic_values.std()
+    ic_ir = ic_mean / ic_std
+    postive_ic = len(ic_values[ic_values > 0]) / len(ic_values)
+
+    f = open(dir + "test.log", 'a')
+
+    f.write(f"\nIC Mean: {ic_mean:.5f}")
+    f.write(f"\nIC Std: {ic_std:.5f}")
+    f.write(f"\nRank IC: {rank_ic_values.mean():.5f}")
+    f.write(f"\nIC_IR: {ic_ir:.5f}")
+    f.write(f"\npostive_ic: {postive_ic:.5f}")
+
 
 def pred_result_double(test_dataset, model, device, dir):
     test_loader = DataLoader(test_dataset, batch_size=1024)
@@ -37,12 +64,14 @@ def pred_result_double(test_dataset, model, device, dir):
     result = []
     for i in tqdm(range(len(test_dataset))):
         stock, date = test_dataset.get_info(i)
-        result.append([date, stock, pred[i].item()])
-    result = pd.DataFrame(result, columns=['date', 'stock_code', 'pred'])
+        _, _, target = test_dataset[i]
+        result.append([date, stock, pred[i].item(), float(target)])
+    result = pd.DataFrame(result, columns=['date', 'stock_code', 'pred', 'target'])
 
     print(test_loss)
     print(result)
-    result.to_csv(dir + f"{date}.csv", index=False)
+    cal_ic(result, dir)
+    result[['date', 'stock_code', 'pred']].to_csv(dir + f"{date}.csv", index=False)
     return test_loss
 
 
@@ -69,12 +98,15 @@ def pred_result(test_dataset, model, device):
     result = []
     for i in tqdm(range(len(test_dataset))):
         stock, date = test_dataset.get_info(i)
+        _, target = test_dataset[i]
         # result.loc[i] = [date, stock, pred[i]]
-        result.append([date, stock, pred[i].item()])
-    result = pd.DataFrame(result, columns=['date', 'stock_code', 'pred'])
+        result.append([date, stock, pred[i].item(), float(target)])
+    result = pd.DataFrame(result, columns=['date', 'stock_code', 'pred', 'target'])
 
     print(test_loss)
     print(result)
+
+    cal_ic(result, "./full_data/result_min/")
     result.to_csv(f"./full_data/result_min/{date}.csv", index=False)
     return test_loss
 
@@ -153,21 +185,19 @@ if __name__ == "__main__":
 
     print(test_list)
     if args.type == "0":
-        test_dataset = single_dataset(test_list)
-        test_loss = pred_result(test_dataset, model, device)
         with open("./full_data/result_min/test.log", 'a') as f:
             f.write(f'\nDate {test_end}')
-            f.write(f'\nprediction Loss: {test_loss}')
+        test_dataset = single_dataset(test_list)
+        test_loss = pred_result(test_dataset, model, device)
     if args.type == "1":
-        test_dataset = double_dataset(test_list)
-        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_day/")
         with open("./full_data/result_day/test.log", 'a') as f:
             f.write(f'\nDate {test_end}')
-            f.write(f'\nprediction Loss: {test_loss}')
-    if args.type == "2":
         test_dataset = double_dataset(test_list)
-        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_double/")
+        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_day/")
+    if args.type == "2":
         with open("./full_data/result_double/test.log", 'a') as f:
             f.write(f'\nDate {test_end}')
-            f.write(f'\nprediction Loss: {test_loss}')
+        test_dataset = double_dataset(test_list)
+        test_loss = pred_result_double(test_dataset, model, device, "./full_data/result_double/")
+
 
