@@ -9,7 +9,7 @@ import numpy as np
 from utils import single_dataset, get_file_list, double_dataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from model import ReturnModel, GRUModel_serial, SepModel
+from model import *
 from scipy.stats import pearsonr
 
 def loss_fn(y_pred, y_true):
@@ -81,6 +81,7 @@ def pred_result(test_dataset, model, device):
     test_target = []
     test_output = []
 
+    # get pred and label
     with torch.no_grad():
         for batch_idx, (input, target) in tqdm(enumerate(test_loader)):
             input = input.to(device)
@@ -107,7 +108,7 @@ def pred_result(test_dataset, model, device):
     print(result)
 
     cal_ic(result, "./full_data/result_min/")
-    result.to_csv(f"./full_data/result_min/{date}.csv", index=False)
+    result[['date', 'stock_code', 'pred']].to_csv(f"./full_data/result_min/{date}.csv", index=False)
     return test_loss
 
 
@@ -152,20 +153,21 @@ if __name__ == "__main__":
     input_size2 = 6
     hidden_size = 30
     output_size = 1
+    num_layers = 1
     learning_rate = 0.0001
     num_epochs = 50
     batch_size = 1024
 
     # Load data and model para
     if args.type == "0":
-        model = GRUModel_serial(input_size1, hidden_size, output_size)
+        model = LSTMModel_serial(input_size1, hidden_size, num_layers, output_size)
         file_list_init = get_file_list('./full_data/min_datapoint/')
     if args.type == "1":
-        model = ReturnModel(input_size1=input_size1, input_size2=input_size2, hidden_size=hidden_size, output_size=output_size)
+        model = LSTMModel_double(input_size1=input_size1, input_size2=input_size2, hidden_size=hidden_size, num_layers=num_layers, output_size=output_size)
         file_list_init = os.listdir('./full_data/min_datapoint/')
     if args.type == '2':
-        day_model = GRUModel_serial(input_size2, hidden_size, output_size)
-        model = SepModel(day_model, input_size1, hidden_size, output_size)
+        day_model = LSTMModel_serial(input_size2, hidden_size, num_layers=num_layers, output_size=output_size)
+        model = LSTMModel_sep(day_model, input_size1, hidden_size, num_layers=num_layers, output_size=output_size)
         file_list_init = os.listdir('./full_data/min_datapoint/')
     model.load_state_dict(state_dict)
     model.to(device)

@@ -7,7 +7,7 @@ import time
 
 from utils import single_dataset, get_file_list, loss_fn
 from torch.utils.data import DataLoader
-from model import GRUModel_serial
+from model import GRUModel_serial, LSTMModel_serial
 
 # 定义训练函数
 def train(model, optimizer, train_loader, device):
@@ -26,7 +26,7 @@ def train(model, optimizer, train_loader, device):
         optimizer.step()
         train_loss += loss.item()
     end = time.time()
-    print(f"epoch time: {end - start} seconds")
+    # print(f"epoch time: {end - start} seconds")
     return train_loss / len(train_loader)
 
 
@@ -78,6 +78,7 @@ if __name__ == "__main__":
     learning_rate = 0.0001
     num_epochs = 50
     batch_size = 1024
+    num_layers = 1
 
     # 创建数据集和数据加载器
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -85,7 +86,7 @@ if __name__ == "__main__":
 
 
     # 创建模型和优化器
-    model = GRUModel_serial(input_size, hidden_size, output_size)
+    model = LSTMModel_serial(input_size, hidden_size, num_layers=num_layers, output_size=output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     device = torch.device('cuda')
     model.to(device)
@@ -114,11 +115,9 @@ if __name__ == "__main__":
             true = torch.concat(test_target).squeeze()
             test_loss = loss_fn(pred, true)
         if(epoch % 10 == 0):
-            y = torch.cat((pred.view(1, -1), true.view(1, -1)), dim=0)
             print(pred)
             print(true)
         print('Epoch: {}, Train Loss: {:.4f}, Test Loss: {:.4f}'.format(epoch+1, train_loss, test_loss))
-        continue
         if best_test_loss > test_loss:
             best_test_loss = test_loss
             torch.save(model.state_dict(), f"./full_data/result_min/{test_end}_model.pt")
