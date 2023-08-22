@@ -5,7 +5,7 @@ import os
 
 from torch.utils.data import Dataset, DataLoader
 from utils import double_dataset, loss_fn
-from model import ReturnModel
+from model import ReturnModel, LSTMModel_double
 
 # 定义训练函数
 def train(model, optimizer, train_loader, device):
@@ -72,6 +72,7 @@ if __name__ == "__main__":
     input_size2 = 6
     hidden_size = 30
     output_size = 1
+    num_layers = 1
     learning_rate = 0.0001
     num_epochs = 50
     batch_size = 1024
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
     # Instantiate model
-    model = ReturnModel(input_size1=input_size1, input_size2=input_size2, hidden_size=hidden_size, output_size=output_size)
+    model = LSTMModel_double(input_size1=input_size1, input_size2=input_size2, hidden_size=hidden_size, num_layers=num_layers, output_size=output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     device = torch.device('cuda')
     model.to(device)

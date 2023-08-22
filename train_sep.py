@@ -5,7 +5,7 @@ import os
 
 from torch.utils.data import Dataset, DataLoader
 from utils import double_dataset, loss_fn
-from model import ReturnModel, GRUModel_serial, SepModel
+from model import LSTMModel_serial, GRUModel_serial, SepModel, LSTMModel_sep
 
 # training using day data
 def train_day(model, optimizer, train_loader, device):
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     input_size1 = 6
     input_size2 = 6
     hidden_size = 30
+    num_layers = 1
     output_size = 1
     learning_rate = 0.0001
     num_epochs = 50
@@ -99,7 +100,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
     # Instantiate model
-    day_model = GRUModel_serial(input_size2, hidden_size, output_size)
+    day_model = LSTMModel_serial(input_size2, hidden_size, num_layers=num_layers, output_size=output_size)
     optimizer = torch.optim.Adam(day_model.parameters(), lr=1e-3)
     device = torch.device('cuda')
     day_model.to(device)
@@ -139,7 +140,7 @@ if __name__ == "__main__":
         f.write(f'\nBest day model Test Loss: {best_test_loss:.5f}')
 
     # train hybrid model
-    hybrid_model = SepModel(best_day_model, input_size1, hidden_size, output_size)
+    hybrid_model = LSTMModel_sep(best_day_model, input_size1, hidden_size, num_layers=num_layers, output_size=output_size)
     optimizer = torch.optim.Adam(hybrid_model.parameters(), lr=learning_rate)
     hybrid_model.to(device)
     print(hybrid_model)
