@@ -613,3 +613,29 @@ def loss_fn(y_pred, y_true):
     corr = torch.corrcoef(y)[0, 1]
     return -corr
 ```
+
+## 4. 选择模型
+
+在之前的使用方法中给出了训练最基础的15min频模型的指令，如果要选择使用不同频率的的数据对应的模型则需要使用不同的程序，具体如下：
+
+```bash
+# Using 15min model
+python main.py --end 2016-12-32
+
+# Using 15min+1day model 
+python train.py --end 2016-12-32
+
+# Using 15min+1day seperate training model
+python train_sep.py --end 2016-12-32
+```
+
+此外程序还提供了LSTM和GRU两种模型作为底层实现，这两种实现的切换需要修改代码。所有的模型均放在model.py内，具体的名称和对应的模型如下表：
+
+| 代码               | 含义                 |
+| ---------------- | ------------------ |
+| GRUModel_serial  | 15min频GRU模型        |
+| ReturnModel      | 15min+1天GRU模型      |
+| SepModel         | 15min+1天分布训练GRU模型  |
+| LSTMModel_serial | 15min频LSTM模型       |
+| LSTMModel_double | 15min+1天LSTM模型     |
+| LSTMModel_sep    | 15min+1天分布训练LSTM模型 |
