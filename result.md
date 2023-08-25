@@ -45,7 +45,7 @@ batch_size = 1024
 
 每次滚动训练完成之后都会对接下来的半年进行回测，回测的结果如下图：
 
-<img title="" src="file:///C:/Users/zhouling_intern3/Documents/gru_backup/pic/result_min_2017_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png" alt="" data-align="inline">
+<img title="" src="./pic/result_min_2017_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png" alt="" data-align="inline">
 
 在滚动回测每半年的数据结果如下：
 
@@ -88,7 +88,7 @@ batch_size = 1024
 
 每次滚动训练完成之后都会对接下来的半年进行回测，回测的结果如下图：
 
-![](C:\Users\zhouling_intern3\Documents\gru_backup\pic\result_day_2017_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
+![](.\pic\result_day_2017_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
 
 在滚动回测每半年的数据结果如下：
 
@@ -130,7 +130,7 @@ batch_size = 1024
 | 2023-06-30 | -0.04113             | -0.00191             | -0.13041                | -0.07571                |
 
 回测结果如下：
-![](C:\Users\zhouling_intern3\Documents\gru_backup\pic\result_double_2017_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
+![](.\pic\result_double_2017_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
 
 在滚动回测每半年的数据结果如下：
 
@@ -156,7 +156,7 @@ batch_size = 1024
 
 首先展示15min模型的结果：
 
-![lstm_min_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png](C:\Users\zhouling_intern3\Documents\gru_backup\pic\lstm_min_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
+![lstm_min_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png](.\pic\lstm_min_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
 
 半年的滚动回测结果如下：
 
@@ -178,7 +178,7 @@ batch_size = 1024
 
 15min频加日频的模型回测结果如下：
 
-![lstm_day_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png](C:\Users\zhouling_intern3\Documents\gru_backup\pic\lstm_day_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
+![lstm_day_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png](.\pic\lstm_day_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
 
 半年滚动训练的测试结果如下：
 
@@ -200,7 +200,7 @@ batch_size = 1024
 
 基于参数冻结+残差预测的增量学习模型的回测结果如下：
 
-![lstm_double_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png](C:\Users\zhouling_intern3\Documents\gru_backup\pic\lstm_double_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
+![lstm_double_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png](.\pic\lstm_double_000905.SH_bench_self_def_pool_pool_quantile_excess_return_2017-01-04_to_2023-06-30.png)
 
 半年滚动训练的测试结果如下：
 
